@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
+import pandas as pd
 import sys
 
 def is_valid_timestamp(timestamp):
@@ -11,55 +12,44 @@ def is_valid_timestamp(timestamp):
         return False
 
 #open data file and read data + split data line by line
-datastream = open("/path-to-file/raw_data.txt", "r")
+datastream = open("path/to/file/raw_data.txt", "r")
 content_of_lines = datastream.readlines()
 length = len(content_of_lines)
 
-data = []
+#declare the array for the data so that we can write into it
+data = np.empty((length, 2),int)
 
 # reformat the data to a int list
+#declare the array for the timestamp in the diagram
+timestamp = np.empty(length, dtype='S19')
+i=0
 for line in content_of_lines:
     line = line.replace("\n", "")
     split_line = [int(i) for i in line.split(";") if i.isdigit()]
-    data.append(split_line)
+    data[i][0] = split_line [0] + split_line[1] + split_line[2] + split_line[3] + split_line[4]
+    data[i][1] = split_line[5]
+    #convert the timestamp to a datetime object while checkingfor if the timestamp is valid
+    if is_valid_timestamp(data[i][1]):
+        timestamp[i] = datetime.utcfromtimestamp(data[i][1]).strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        print("Invalid timestamp:", data[i][1])
+        sys.exit("program stopped")
+    i+=1
 
 print('data:', data)
 
 # Close the file
 datastream.close()
 
-#declare the for the timestamp in the diagram
-timestamp = []
-
-# Add the data so that we can see when the errors happend and remove the rest of the data
-for sublist in data:
-    sublist[0] = sublist[0] + sublist[1] + sublist[2] + sublist[3] + sublist[4]
-    sublist[1] = sublist[5]
-    del sublist[2:]
-    #convert the timestamp to a datetime object while checkingfor if the timestamp is valid
-    if is_valid_timestamp(sublist[1]):
-        timestamp.append(datetime.utcfromtimestamp(sublist[1]).strftime('%Y-%m-%d %H:%M:%S'))
-    else:
-        print("Invalid timestamp:", sublist[1])
-        sys.exit("program stopped")
-
-
-# Print the data for debugging
-for sublist in data:
-    for number in sublist:
-        print(number)
-
-
-values = []
-for sublist in data:
-    #timestamp.append(sublist[1])
-    values.append(sublist[0])
-
+print('timestamp:', timestamp)
 #plt.subplots_adjust(top=1)  # Adjust space at the top of the plot
+plt.figure(figsize=(16, 9))
 plt.subplots_adjust(bottom=0.18)  # Adjust space at the bottom of the plot
-plt.bar(timestamp, values, color='skyblue')
+plt.bar(timestamp, data[:,0], color='skyblue')
 plt.xlabel('Categories')
 plt.ylabel('Values')
 plt.title('Fehler in Abhängigkeit der Zeit')
-plt.xticks(rotation=30)  # Rotate labels on x-axis
+plt.xticks(rotation=30)  # Rotate labels on x-axisplt.savefig('Diagrams/Diagramm_Laboraufgabe_1.pdf', dpi=300)
+plt.subplots_adjust(left=0.07, right=0.99, top=0.95)
+plt.savefig('path/to/file/example.pdf', dpi=300)
 plt.show()
